@@ -1,7 +1,7 @@
 # QueryableProjector
 IQueryable automatic prjection device, easily convert IQueryable&lt;Entity> to IQueryable&lt;Dto>.
 
-Detects **Include**s and extends only those navigation properties.
+Detects **Include**s and extends only included navigation properties.
 
 Usage;
 
