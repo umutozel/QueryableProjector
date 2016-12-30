@@ -14,3 +14,4 @@ using (var context = new TestEntities()) {
     // profit?
 }
 ```
+[Nuget](https://www.nuget.org/packages/QueryableProjector/)
