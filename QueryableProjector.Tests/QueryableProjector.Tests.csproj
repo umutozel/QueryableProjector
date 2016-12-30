@@ -62,6 +62,7 @@
     <Compile Include="Dto\OrderDetailDto.cs" />
     <Compile Include="Dto\OrderDto.cs" />
     <Compile Include="Dto\SupplierDto.cs" />
+    <Compile Include="MapDefinitionTests.cs" />
     <Compile Include="Model\Company.cs" />
     <Compile Include="Model\Customer.cs" />
     <Compile Include="Model\Order.cs" />

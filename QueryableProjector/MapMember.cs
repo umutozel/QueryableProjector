@@ -10,11 +10,15 @@ namespace QueryableProjector {
         private readonly string _name;
         private readonly Type _type;
         private readonly MemberInfo _memberInfo;
+        private readonly bool _isPrimitive;
 
         internal MapMember(string name, Type type, MemberInfo memberInfo) {
             _name = name;
             _type = type;
             _memberInfo = memberInfo;
+            
+            _isPrimitive = Type.GetTypeCode(type) != TypeCode.Object // only primitive properties
+                || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)); // including nullable ones
         }
 
         internal string Name { get { return _name; } }
@@ -23,9 +27,6 @@ namespace QueryableProjector {
 
         internal MemberInfo MemberInfo { get { return _memberInfo; } }
 
-        internal bool IsPrimitive() {
-            return Type.GetTypeCode(_type) != TypeCode.Object // only primitive properties
-                || (_type.IsGenericType && _type.GetGenericTypeDefinition() == typeof(Nullable<>)); // including nullable ones
-        }
+        internal bool IsPrimitive { get { return _isPrimitive; } }
     }
 }

@@ -21,104 +21,103 @@ namespace QueryableProjector.Tests {
         }
 
         [TestMethod]
+        [TestCategory("Simple Query Tests")]
         public void OrderCustomer() {
             using (var context = new TestEntities()) {
-                var query = context.Orders.Include(o => o.Customer);
-                var dtoQuery = query.ProjectTo<OrderDto>();
-
-                var orders = dtoQuery.ToList();
-                Assert.AreEqual(2, orders.Count);
-
-                var order = orders.First();
-                Assert.AreEqual(0, order.OrderDetails.Count);
-                Assert.IsNotNull(order.Customer);
+                OrderCustomerImpl(context.Orders.Include(o => o.Customer));
             }
         }
 
         [TestMethod]
+        [TestCategory("Simple Query Tests")]
         public void OrderCustomerStringInclude() {
             using (var context = new TestEntities()) {
-                var query = context.Orders.Include("Customer");
-                var dtoQuery = query.ProjectTo<OrderDto>();
-
-                var orders = dtoQuery.ToList();
-                Assert.AreEqual(2, orders.Count);
-
-                var order = orders.First();
-                Assert.AreEqual(0, order.OrderDetails.Count);
-                Assert.IsNotNull(order.Customer);
+                OrderCustomerImpl(context.Orders.Include("Customer"));
             }
         }
 
+        private static void OrderCustomerImpl(IQueryable<Order> query) {
+            var dtoQuery = query.ProjectTo<OrderDto>();
+            var orders = dtoQuery.ToList();
+
+            Assert.AreEqual(2, orders.Count);
+            Assert.IsTrue(orders.All(o => !o.OrderDetails.Any()));
+            Assert.IsTrue(orders.All(o => o.Customer != null && o.CustomerId == o.Customer.Id));
+        }
+
         [TestMethod]
+        [TestCategory("Simple Query Tests")]
         public void OrderDetails() {
             using (var context = new TestEntities()) {
-                var query = context.Orders.Include(o => o.OrderDetails);
-                var dtoQuery = query.ProjectTo<OrderDto>();
-
-                var orders = dtoQuery.ToList();
-                Assert.AreEqual(2, orders.Count);
-
-                var order = orders.First();
-                Assert.AreEqual(3, order.OrderDetails.Count);
-                Assert.IsNull(order.Customer);
-
-                var detail = order.OrderDetails.First();
-                Assert.IsNull(detail.Supplier);
+                OrderDetailsImpl(context.Orders.Include(o => o.OrderDetails));
             }
         }
 
         [TestMethod]
+        [TestCategory("Simple Query Tests")]
         public void OrderDetailsStringInclude() {
             using (var context = new TestEntities()) {
-                var query = context.Orders.Include("OrderDetails");
-                var dtoQuery = query.ProjectTo<OrderDto>();
-
-                var orders = dtoQuery.ToList();
-                Assert.AreEqual(2, orders.Count);
-
-                var order = orders.First();
-                Assert.AreEqual(3, order.OrderDetails.Count);
-                Assert.IsNull(order.Customer);
-
-                var detail = order.OrderDetails.First();
-                Assert.IsNull(detail.Supplier);
+                OrderDetailsImpl(context.Orders.Include("OrderDetails"));
             }
         }
 
+        private static void OrderDetailsImpl(IQueryable<Order> query) {
+            var dtoQuery = query.ProjectTo<OrderDto>();
+            var orders = dtoQuery.ToList();
+
+            Assert.AreEqual(2, orders.Count);
+            Assert.IsTrue(orders.All(o => o.OrderDetails.Count == 3));
+            Assert.IsTrue(orders.All(o => o.Customer == null));
+            Assert.IsTrue(orders.All(o => o.OrderDetails.All(od => od.Supplier == null)));
+        }
+
         [TestMethod]
+        [TestCategory("Simple Query Tests")]
         public void OrderCustomerDetailSupplier() {
             using (var context = new TestEntities()) {
-                var query = context.Orders.Include(o => o.Customer).Include(o => o.OrderDetails.Select(od => od.Supplier));
-                var dtoQuery = query.ProjectTo<OrderDto>();
-
-                var orders = dtoQuery.ToList();
-                Assert.AreEqual(2, orders.Count);
-
-                var order = orders.First();
-                Assert.AreEqual(3, order.OrderDetails.Count);
-                Assert.IsNotNull(order.Customer);
-
-                var detail = order.OrderDetails.First();
-                Assert.IsNotNull(detail.Supplier);
+                OrderCustomerDetailSupplierImpl(context.Orders.Include(o => o.Customer).Include(o => o.OrderDetails.Select(od => od.Supplier)));
             }
         }
 
         [TestMethod]
+        [TestCategory("Simple Query Tests")]
         public void OrderCustomerDetailSupplierStringInclude() {
             using (var context = new TestEntities()) {
-                var query = context.Orders.Include("Customer").Include("OrderDetails.Supplier");
-                var dtoQuery = query.ProjectTo<OrderDto>();
+                OrderCustomerDetailSupplierImpl(context.Orders.Include("Customer").Include("OrderDetails.Supplier"));
+            }
+        }
 
+        private static void OrderCustomerDetailSupplierImpl(IQueryable<Order> query) {
+            var dtoQuery = query.ProjectTo<OrderDto>();
+            var orders = dtoQuery.ToList();
+
+            Assert.AreEqual(2, orders.Count);
+            Assert.IsTrue(orders.All(o => o.OrderDetails.Count == 3));
+            Assert.IsTrue(orders.All(o => o.Customer != null));
+            Assert.IsTrue(orders.All(o => o.OrderDetails.All(od => od.Supplier != null)));
+        }
+
+        [TestMethod]
+        [TestCategory("Simple Query Tests")]
+        public void OrderCustomerDetailSupplierWithProjector() {
+            using (var context = new TestEntities()) {
+                var query = context.Orders.Include(o => o.Customer).Include(o => o.OrderDetails.Select(od => od.Supplier));
+
+                var projector = Helper.CreateProjector<Order, OrderDto>(Helper.GetIncludes(query));
+                var dtoQuery = query.Select(projector);
                 var orders = dtoQuery.ToList();
+
                 Assert.AreEqual(2, orders.Count);
+                Assert.IsTrue(orders.All(o => o.OrderDetails.Count == 3));
+                Assert.IsTrue(orders.All(o => o.Customer != null));
+                Assert.IsTrue(orders.All(o => o.OrderDetails.All(od => od.Supplier != null)));
+            }
+        }
 
-                var order = orders.First();
-                Assert.AreEqual(3, order.OrderDetails.Count);
-                Assert.IsNotNull(order.Customer);
-
-                var detail = order.OrderDetails.First();
-                Assert.IsNotNull(detail.Supplier);
+        [ClassCleanup]
+        public static void ClassCleanup() {
+            using (var ctx = new TestEntities()) {
+                ctx.Database.Delete();
             }
         }
     }

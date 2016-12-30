@@ -15,8 +15,6 @@ namespace QueryableProjector {
         /// <param name="query">The query.</param>
         /// <returns>Included navigations members.</returns>
         internal ReadOnlyCollection<string> GetIncludes(IQueryable query) {
-            if (query == null) throw new ArgumentNullException(nameof(query));
-
             _includes.Clear();
             Visit(query.Expression);
 
@@ -30,15 +28,9 @@ namespace QueryableProjector {
 
                     foreach (var span in spanList) {
                         var navs = (IEnumerable<string>)Helper.GetPrivateFieldValue(span, "Navigations");
+                        // converting human readable string paths.
                         _includes.Add(string.Join(".", navs));
                     }
-                }
-            }
-            else if (m.Method.Name == "Include") {
-                var include = (string)Helper.GetPrivatePropertyValue(m.Arguments.First(), "Value");
-
-                if (include != null) {
-                    _includes.Add(include);
                 }
             }
 

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+    <metadata>
+        <id>QueryableProjector</id>
+        <version>1.0.0</version>
+        <title>IQueryable automatic projection device.</title>
+        <authors>Umut Özel</authors>
+        <owners>Umut Özel</owners>
+        <projectUrl>https://github.com/umutozel/QueryableProjector</projectUrl>
+        <licenseUrl>https://github.com/umutozel/QueryableProjector/blob/master/License.txt</licenseUrl>
+        <iconUrl>http://i.imgur.com/HC4E2yv.png</iconUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>
+IQueryable automatic projection device. 
+Easily convert IQueryable&lt;Entity&gt; to IQueryable&lt;Dto&gt;
+            
+var dtoQuery = query.ProjectTo&lt;OrderDto&gt;();
+        </description>
+        <summary>IQueryable automatic projection device. Easily convert IQueryable&lt;Entity&gt; to IQueryable&lt;Dto&gt;</summary>
+        <copyright>Copyright (c) 2016 Umut Özel</copyright>
+        <tags>Linq Query Queryable Project ProjectTo Entity Dto</tags>
+        <language>en-US</language>
+    </metadata>
+</package>

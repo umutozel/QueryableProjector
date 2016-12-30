@@ -37,7 +37,7 @@ namespace QueryableProjector {
         /// <param name="onlyWritable">When true, only writable properties will be included.</param>
         /// <param name="bindingFlags">Binding flags to filter properties and fields.</param>
         /// <returns>Properties and field for projection.</returns>
-        internal static IEnumerable<MapMember> GetMapFields(Type type, bool onlyWritable = false, 
+        internal static IEnumerable<MapMember> GetMapFields(Type type, bool onlyWritable = false,
                                                             BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public) {
             IEnumerable<PropertyInfo> properties = type.GetProperties(bindingFlags);
             if (onlyWritable) {
@@ -66,21 +66,13 @@ namespace QueryableProjector {
         /// <param name="query">The query.</param>
         /// <returns>Projected query.</returns>
         public static IQueryable<TOut> ProjectTo<TOut>(this IQueryable query, IDictionary<Type, IMapDefinition> mapDefinitions = null) {
-            var mi = typeof(Helper).GetMethod("ProjectToImpl", BindingFlags.Static | BindingFlags.NonPublic);
-            var gmi = mi.MakeGenericMethod(query.ElementType, typeof(TOut));
-            return (IQueryable<TOut>)gmi.Invoke(null, new object[] { query, mapDefinitions });
-        }
-
-        /// <summary>
-        /// Projects query to given generic argument type.
-        /// This method is added to allow generic argument inference for ProjectTo<TOut>
-        /// </summary>
-        /// <typeparam name="TIn">Source type.</typeparam>
-        /// <typeparam name="TOut">Target type.</typeparam>
-        /// <param name="query">The query.</param>
-        /// <returns>Projected query.</returns>
-        private static IQueryable<TOut> ProjectToImpl<TIn, TOut>(IQueryable<TIn> query, IDictionary<Type, IMapDefinition> mapDefinitions = null) {
-            return query.Select(CreateProjector<TIn, TOut>(GetIncludes(query), mapDefinitions));
+            var projector = CreateProjector(query.ElementType, typeof(TOut), GetIncludes(query), mapDefinitions);
+            return (IQueryable<TOut>)query.Provider.CreateQuery(
+                Expression.Call(
+                    typeof(Queryable), "Select",
+                    new Type[] { query.ElementType, typeof(TOut) },
+                    query.Expression, projector)
+                );
         }
 
         /// <summary>
@@ -116,16 +108,38 @@ namespace QueryableProjector {
         /// <param name="includes">Navigation properties to include in projection.</param>
         /// <param name="prmExp">ParameterExpression instance to point the source object.</param>
         /// <returns>The reusable projector object initializer.</returns>
-        private static MemberInitExpression CreateAssigner(Type inType, Type outType, IEnumerable<string> includes, IDictionary<Type, IMapDefinition> mapDefinitions, Expression prmExp) {
+        private static MemberInitExpression CreateAssigner(Type inType, Type outType, IEnumerable<string> includes,
+                                                           IDictionary<Type, IMapDefinition> mapDefinitions, Expression prmExp) {
             var inProperties = GetMapFields(inType);
             var outProperties = GetMapFields(outType, true);
 
+            IMapDefinition mapDefinition;
+            if (mapDefinitions != null) {
+                mapDefinitions.TryGetValue(inType, out mapDefinition);
+            }
+            else mapDefinition = null;
+
+            Dictionary<string, Tuple<MapMember, MapMember>> navigationMapping = new Dictionary<string, Tuple<MapMember, MapMember>>();
             var memberBindings = new List<MemberBinding>();
-            foreach (var inProperty in inProperties.Where(p => p.IsPrimitive())) {
-                foreach (var outProperty in outProperties.Where(p => p.IsPrimitive())) {
-                    if (inProperty.Name == outProperty.Name) {
+            foreach (var outProperty in outProperties) {
+                string mappedInPropertyName;
+                if (mapDefinition != null) {
+                    if (!mapDefinition.Maps.TryGetValue(outProperty.Name, out mappedInPropertyName)) {
+                        if (mapDefinition.OnlyExplicit) continue;
+
+                        mappedInPropertyName = outProperty.Name;
+                    }
+                }
+                else mappedInPropertyName = outProperty.Name;
+
+                var inProperty = inProperties.FirstOrDefault(p => p.Name == mappedInPropertyName);
+                if (inProperty != null) {
+                    if (inProperty.IsPrimitive) {
                         var p1Exp = Expression.PropertyOrField(prmExp, inProperty.Name);
                         memberBindings.Add(Expression.Bind(outProperty.MemberInfo, p1Exp));
+                    }
+                    else {
+                        navigationMapping[inProperty.Name] = new Tuple<MapMember, MapMember>(inProperty, outProperty);
                     }
                 }
             }
@@ -151,26 +165,28 @@ namespace QueryableProjector {
                     .ToList();
 
                 foreach (var includeGroup in includeGroups) {
-                    var inIncludeProperty = inProperties.FirstOrDefault(p => p.Name == includeGroup.Property);
-                    if (inIncludeProperty == null) continue;
+                    Tuple<MapMember, MapMember> includeMapping;
+                    if (!navigationMapping.TryGetValue(includeGroup.Property, out includeMapping)) continue;
 
-                    var outIncludeProperty = outProperties.FirstOrDefault(p => p.Name == includeGroup.Property);
-                    if (outIncludeProperty == null) continue;
+                    var inIncludeProperty = includeMapping.Item1;
+                    var outIncludeProperty = includeMapping.Item2;
 
                     var inIncludeType = inIncludeProperty.Type;
                     var outIncludeType = outIncludeProperty.Type;
 
                     var inIncludeEnumerableType = inIncludeType.GetInterfaces()
                         .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+                    var outIncludeEnumerableType = outIncludeType.GetInterfaces()
+                        .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
                     if (inIncludeEnumerableType != null) {
-                        var outIncludeEnumerableType = outIncludeType.GetInterfaces()
-                            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
                         if (outIncludeEnumerableType == null)
-                            throw new ArrayTypeMismatchException($"Array type mismatch for property {includeGroup.Property}");
+                            throw new ArrayTypeMismatchException($"Navigation type mismatch for property {includeGroup.Property}");
 
                         inIncludeType = inIncludeEnumerableType.GetGenericArguments()[0];
                         outIncludeType = outIncludeEnumerableType.GetGenericArguments()[0];
                     }
+                    else if (outIncludeEnumerableType != null)
+                        throw new ArrayTypeMismatchException($"Navigation type mismatch for property {includeGroup.Property}");
 
                     Expression subProjector;
                     if (inIncludeEnumerableType != null) {
