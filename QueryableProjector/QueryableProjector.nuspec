@@ -2,7 +2,7 @@
 <package >
     <metadata>
         <id>QueryableProjector</id>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
         <title>IQueryable automatic projection device.</title>
         <authors>Umut Özel</authors>
         <owners>Umut Özel</owners>
@@ -10,6 +10,7 @@
         <licenseUrl>https://github.com/umutozel/QueryableProjector/blob/master/License.txt</licenseUrl>
         <iconUrl>https://cdn.rawgit.com/umutozel/QueryableProjector/master/icon.png</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <releaseNotes></releaseNotes>
         <description>
 IQueryable automatic projection device. 
 Easily convert IQueryable&lt;Entity&gt; to IQueryable&lt;Dto&gt;

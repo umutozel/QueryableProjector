@@ -64,8 +64,9 @@ namespace QueryableProjector {
         /// </summary>
         /// <typeparam name="TOut">Target type.</typeparam>
         /// <param name="query">The query.</param>
+        /// <param name="mapDefinitions">Map definitions (property mappings) for source and destination types.</param>
         /// <returns>Projected query.</returns>
-        public static IQueryable<TOut> ProjectTo<TOut>(this IQueryable query, IDictionary<Type, IMapDefinition> mapDefinitions = null) {
+        public static IQueryable<TOut> ProjectTo<TOut>(this IQueryable query, IMapDefinitionCollection mapDefinitions = null) {
             var projector = CreateProjector(query.ElementType, typeof(TOut), GetIncludes(query), mapDefinitions);
             return (IQueryable<TOut>)query.Provider.CreateQuery(
                 Expression.Call(
@@ -81,8 +82,9 @@ namespace QueryableProjector {
         /// <typeparam name="TIn">Source type.</typeparam>
         /// <typeparam name="TOut">Target type.</typeparam>
         /// <param name="includes">Navigation properties to include in projection.</param>
+        /// <param name="mapDefinitions">Map definitions (property mappings) for source and destination types.</param>
         /// <returns>The reusable lambda expression.</returns>
-        public static Expression<Func<TIn, TOut>> CreateProjector<TIn, TOut>(IEnumerable<string> includes = null, IDictionary<Type, IMapDefinition> mapDefinitions = null) {
+        public static Expression<Func<TIn, TOut>> CreateProjector<TIn, TOut>(IEnumerable<string> includes = null, IMapDefinitionCollection mapDefinitions = null) {
             return (Expression<Func<TIn, TOut>>)CreateProjector(typeof(TIn), typeof(TOut), includes, mapDefinitions);
         }
 
@@ -93,7 +95,8 @@ namespace QueryableProjector {
         /// <param name="outType">Target type.</param>
         /// <param name="includes">Navigation properties to include in projection.</param>
         /// <returns>The reusable projector lambda expression.</returns>
-        public static LambdaExpression CreateProjector(Type inType, Type outType, IEnumerable<string> includes = null, IDictionary<Type, IMapDefinition> mapDefinitions = null) {
+        /// <param name="mapDefinitions">Map definitions (property mappings) for source and destination types.</param>
+        public static LambdaExpression CreateProjector(Type inType, Type outType, IEnumerable<string> includes = null, IMapDefinitionCollection mapDefinitions = null) {
             var prmExp = Expression.Parameter(inType, "e");
             var memberInit = CreateAssigner(inType, outType, includes, mapDefinitions, prmExp);
 
@@ -108,14 +111,15 @@ namespace QueryableProjector {
         /// <param name="includes">Navigation properties to include in projection.</param>
         /// <param name="prmExp">ParameterExpression instance to point the source object.</param>
         /// <returns>The reusable projector object initializer.</returns>
+        /// <param name="mapDefinitions">Map definitions (property mappings) for source and destination types.</param>
         private static MemberInitExpression CreateAssigner(Type inType, Type outType, IEnumerable<string> includes,
-                                                           IDictionary<Type, IMapDefinition> mapDefinitions, Expression prmExp) {
+                                                           IMapDefinitionCollection mapDefinitions, Expression prmExp) {
             var inProperties = GetMapFields(inType);
             var outProperties = GetMapFields(outType, true);
 
             IMapDefinition mapDefinition;
             if (mapDefinitions != null) {
-                mapDefinitions.TryGetValue(inType, out mapDefinition);
+                mapDefinition = mapDefinitions.Resolve(inType, outType);
             }
             else mapDefinition = null;
 

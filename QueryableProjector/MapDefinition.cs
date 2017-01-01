@@ -1,6 +1,33 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace QueryableProjector {
+
+    public class MapDefinitionCollection: IMapDefinitionCollection {
+        private readonly Dictionary<Tuple<Type, Type>, IMapDefinition> _maps = new Dictionary<Tuple<Type, Type>, IMapDefinition>();
+
+        /// <summary>
+        /// Registers the mapping.
+        /// </summary>
+        /// <param name="inType">Source type.</param>
+        /// <param name="outType">Destination type.</param>
+        /// <param name="mapDefinition">Property mappings.</param>
+        public virtual void Register(Type inType, Type outType, IMapDefinition mapDefinition) {
+            _maps[new Tuple<Type, Type>(inType, outType)] = mapDefinition;
+        }
+
+        /// <summary>
+        /// Finds the defined property mappings for given types.
+        /// </summary>
+        /// <param name="inType">Source type.</param>
+        /// <param name="outType">Destination type.</param>
+        /// <returns>Property mappings.</returns>
+        public virtual IMapDefinition Resolve(Type inType, Type outType) {
+            IMapDefinition mapDefinition;
+            _maps.TryGetValue(new Tuple<Type, Type>(inType, outType), out mapDefinition);
+            return mapDefinition;
+        }
+    }
 
     public class MapDefinition : IMapDefinition {
         private readonly IDictionary<string, string> _maps;
@@ -20,6 +47,11 @@ namespace QueryableProjector {
         public IDictionary<string, string> Maps { get { return _maps; } }
 
         public bool OnlyExplicit { get { return _onlyExplicit; } }
+    }
+
+    public interface IMapDefinitionCollection {
+        void Register(Type inType, Type outType, IMapDefinition mapDefinition);
+        IMapDefinition Resolve(Type inType, Type outType);
     }
 
     public interface IMapDefinition {

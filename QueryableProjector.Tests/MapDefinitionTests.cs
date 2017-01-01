@@ -28,14 +28,14 @@ namespace QueryableProjector.Tests {
             using (var context = new TestEntities()) {
                 var query = context.Orders.Include(o => o.OrderDetails);
 
-                var mapDefinitions = new Dictionary<Type, IMapDefinition>();
-                mapDefinitions[typeof(Order)] = new MapDefinition(
+                var mapDefinitions = new MapDefinitionCollection();
+                mapDefinitions.Register(typeof(Order), typeof(OrderDetailDto), new MapDefinition(
                     new Dictionary<string, string> {
                         { "Supplier", "OrderDetails" } // set collection to single
                     }, true
-                );
+                ));
 
-                var dtoQuery = query.ProjectTo<OrderDetail>(mapDefinitions);
+                var dtoQuery = query.ProjectTo<OrderDetailDto>(mapDefinitions);
             }
         }
 
@@ -46,14 +46,14 @@ namespace QueryableProjector.Tests {
             using (var context = new TestEntities()) {
                 var query = context.Set<OrderDetail>().Include(od => od.Supplier);
 
-                var mapDefinitions = new Dictionary<Type, IMapDefinition>();
-                mapDefinitions[typeof(OrderDetail)] = new MapDefinition(
+                var mapDefinitions = new MapDefinitionCollection();
+                mapDefinitions.Register(typeof(OrderDetail), typeof(OrderDto), new MapDefinition(
                     new Dictionary<string, string> {
                         { "OrderDetails", "Supplier" } // set single to collection
                     }, true
-                );
+                ));
 
-                var dtoQuery = query.ProjectTo<Order>(mapDefinitions);
+                var dtoQuery = query.ProjectTo<OrderDto>(mapDefinitions);
             }
         }
 
@@ -63,17 +63,17 @@ namespace QueryableProjector.Tests {
             using (var context = new TestEntities()) {
                 var query = context.Orders.Include(o => o.Customer);
 
-                var mapDefinitions = new Dictionary<Type, IMapDefinition>();
-                mapDefinitions[typeof(Order)] = new MapDefinition(
+                var mapDefinitions = new MapDefinitionCollection();
+                mapDefinitions.Register(typeof(Order), typeof(OrderDto), new MapDefinition(
                     new Dictionary<string, string> {
                         { "CustomerId", "Id" } // set OrderNo with Id
                     }
-                );
-                mapDefinitions[typeof(Customer)] = new MapDefinition(
+                ));
+                mapDefinitions.Register(typeof(Customer), typeof(CustomerDto), new MapDefinition(
                     new Dictionary<string, string> {
                         { "Id", "Id" } // get only Id field
                     }, true
-                );
+                ));
 
                 var dtoQuery = query.ProjectTo<OrderDto>(mapDefinitions);
                 var orders = dtoQuery.ToList();
@@ -91,12 +91,12 @@ namespace QueryableProjector.Tests {
             using (var context = new TestEntities()) {
                 var query = context.Orders.Include(o => o.OrderDetails.Select(od => od.Supplier));
 
-                var mapDefinitions = new Dictionary<Type, IMapDefinition>();
-                mapDefinitions[typeof(OrderDetail)] = new MapDefinition(
+                var mapDefinitions = new MapDefinitionCollection();
+                mapDefinitions.Register(typeof(OrderDetail), typeof(OrderDetailDto), new MapDefinition(
                     new Dictionary<string, string> {
                         { "Id", "OrderId" } // write OrderId into Id field
                     }, true
-                );
+                ));
 
                 var dtoQuery = query.ProjectTo<OrderDto>(mapDefinitions);
                 var orders = dtoQuery.ToList();
