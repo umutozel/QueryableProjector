@@ -21,16 +21,7 @@ namespace QueryableProjector.Tests.Model {
         }
 
         public override void InitializeDatabase(TestEntities context) {
-            if (context.Database.Exists()) context.Database.Delete();
             context.Database.Create();
-
-            foreach (var e in context.Companies)
-                context.Companies.Remove(e);
-            foreach (var od in context.Set<OrderDetail>())
-                context.Set<OrderDetail>().Remove(od);
-            foreach (var e in context.Orders)
-                context.Orders.Remove(e);
-            context.SaveChanges();
 
             Seed(context);
         }

@@ -9,7 +9,6 @@ namespace QueryableProjector.Tests.Model {
         }
 
         public DbSet<Order> Orders { get; set; }
-        public DbSet<Company> Companies { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);

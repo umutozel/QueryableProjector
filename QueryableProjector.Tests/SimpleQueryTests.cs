@@ -66,6 +66,7 @@ namespace QueryableProjector.Tests {
             var orders = dtoQuery.ToList();
 
             Assert.AreEqual(2, orders.Count);
+            Assert.IsTrue(orders.All(o => !string.IsNullOrEmpty(o.OrderNo)));
             Assert.IsTrue(orders.All(o => o.OrderDetails.Count == 3));
             Assert.IsTrue(orders.All(o => o.Customer == null));
             Assert.IsTrue(orders.All(o => o.OrderDetails.All(od => od.Supplier == null)));
@@ -110,7 +111,7 @@ namespace QueryableProjector.Tests {
                 Assert.AreEqual(2, orders.Count);
                 Assert.IsTrue(orders.All(o => o.OrderDetails.Count == 3));
                 Assert.IsTrue(orders.All(o => o.Customer != null));
-                Assert.IsTrue(orders.All(o => o.OrderDetails.All(od => od.Supplier != null)));
+                Assert.IsTrue(orders.All(o => o.OrderDetails.All(od => od.Supplier != null && !string.IsNullOrEmpty(od.Supplier.Name))));
             }
         }
 

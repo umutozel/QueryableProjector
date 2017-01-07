@@ -35,7 +35,7 @@ namespace QueryableProjector.Tests {
                     }, true
                 ));
 
-                var dtoQuery = query.ProjectTo<OrderDetailDto>(mapDefinitions);
+                query.ProjectTo<OrderDetailDto>(mapDefinitions);
             }
         }
 
@@ -53,7 +53,7 @@ namespace QueryableProjector.Tests {
                     }, true
                 ));
 
-                var dtoQuery = query.ProjectTo<OrderDto>(mapDefinitions);
+                query.ProjectTo<OrderDto>(mapDefinitions);
             }
         }
 
