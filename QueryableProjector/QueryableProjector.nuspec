@@ -3,7 +3,7 @@
     <metadata>
         <id>QueryableProjector</id>
         <version>1.1.0</version>
-        <title>IQueryable automatic projection device.</title>
+        <title>QueryableProjector</title>
         <authors>Umut Özel</authors>
         <owners>Umut Özel</owners>
         <projectUrl>https://github.com/umutozel/QueryableProjector</projectUrl>
